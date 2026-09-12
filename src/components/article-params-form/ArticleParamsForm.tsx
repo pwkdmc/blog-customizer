@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import { Select } from 'src/ui/select';
 import { Text } from 'src/ui/text';
 import {
+	ArticleStateType,
 	backgroundColors,
 	contentWidthArr,
 	defaultArticleState,
@@ -18,28 +19,24 @@ import {
 } from 'src/constants/articleProps';
 import { Separator } from 'src/ui/separator';
 import { RadioGroup } from 'src/ui/radio-group';
-import { AppParameters } from '../app/app';
 
 type ArticleParamsFormProps = {
-	onApply: (parameters: AppParameters) => void;
+	onApply: (parameters: ArticleStateType) => void;
 	onReset: () => void;
 };
 
 export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
+	const [formState, setFormState] =
+		useState<ArticleStateType>(defaultArticleState);
 	const [isOpen, setIsOpen] = useState(false);
-	const [fontFamily, setFontFamily] = useState(
-		defaultArticleState.fontFamilyOption
-	);
-	const [fontSize, setFontSize] = useState(defaultArticleState.fontSizeOption);
-	const [fontColor, setFontColor] = useState(defaultArticleState.fontColor);
-	const [bgColor, setBgColor] = useState(defaultArticleState.backgroundColor);
-	const [containerWidth, setContainerWidth] = useState(
-		defaultArticleState.contentWidth
-	);
 
 	const formRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
+		if (!isOpen) {
+			return;
+		}
+
 		const handleClickOutside = (e: MouseEvent) => {
 			if (formRef.current && !formRef.current.contains(e.target as Node)) {
 				setIsOpen(false);
@@ -51,28 +48,27 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 		return () => {
 			document.removeEventListener('mousedown', handleClickOutside);
 		};
-	}, []);
+	}, [isOpen]);
 
 	const onReset = () => {
-		setFontFamily(defaultArticleState.fontFamilyOption);
-		setFontSize(defaultArticleState.fontSizeOption);
-		setFontColor(defaultArticleState.fontColor);
-		setBgColor(defaultArticleState.backgroundColor);
-		setContainerWidth(defaultArticleState.contentWidth);
+		setFormState(defaultArticleState);
 		props.onReset();
 		setIsOpen(false);
 	};
 
 	const onApply = (e: FormEvent) => {
 		e.preventDefault();
-		props.onApply({
-			fontFamily,
-			fontSize,
-			fontColor,
-			bgColor,
-			containerWidth,
-		});
+		props.onApply(formState);
 		setIsOpen(false);
+	};
+
+	const updateFormField = (field: keyof ArticleStateType) => {
+		return (value: OptionType) => {
+			setFormState((prev) => ({
+				...prev,
+				[field]: value,
+			}));
+		};
 	};
 
 	return (
@@ -90,46 +86,36 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 						Задайте параметры
 					</Text>
 					<Select
-						selected={fontFamily}
+						selected={formState.fontFamilyOption}
 						options={fontFamilyOptions}
 						title='Шрифт'
-						onChange={(selected: OptionType) => {
-							setFontFamily(selected);
-						}}
+						onChange={updateFormField('fontFamilyOption')}
 					/>
 					<RadioGroup
-						selected={fontSize}
+						selected={formState.fontSizeOption}
 						options={fontSizeOptions}
 						title='Размер шрифта'
-						onChange={(selected: OptionType) => {
-							setFontSize(selected);
-						}}
+						onChange={updateFormField('fontSizeOption')}
 						name='fontSize'
 					/>
 					<Select
-						selected={fontColor}
+						selected={formState.fontColor}
 						options={fontColors}
 						title='Цвет шрифта'
-						onChange={(selected: OptionType) => {
-							setFontColor(selected);
-						}}
+						onChange={updateFormField('fontColor')}
 					/>
 					<Separator />
 					<Select
-						selected={bgColor}
+						selected={formState.backgroundColor}
 						options={backgroundColors}
 						title='Цвет фона'
-						onChange={(selected: OptionType) => {
-							setBgColor(selected);
-						}}
+						onChange={updateFormField('backgroundColor')}
 					/>
 					<Select
-						selected={containerWidth}
+						selected={formState.contentWidth}
 						options={contentWidthArr}
 						title='Ширина контента'
-						onChange={(selected: OptionType) => {
-							setContainerWidth(selected);
-						}}
+						onChange={updateFormField('contentWidth')}
 					/>
 					<div className={styles.bottomContainer}>
 						<Button
